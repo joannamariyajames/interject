@@ -168,11 +168,6 @@ refuses an irreversible call.
 - The sidebar and telemetry rail are desktop-first; below `xl` the rail hides and
   below `lg` the sidebar does too. The chat itself works at phone width.
 
-## Credits
 
-UI structure and design-token approach adapted from the
-[LastChat](https://github.com/Cocolalilal/LastChat) web client - the sidebar/chat
-split, oklch token layering and generous corner radii come from there, retuned
-around a coral accent and extended with the telemetry rail this theme needs.
 
-MIT licensed.
+
