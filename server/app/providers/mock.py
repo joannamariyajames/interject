@@ -93,12 +93,28 @@ class MockProvider:
                 f"On {top['title'].lower()}: {lead[0] if lead else top['snippet'][:160]}\n\n"
             )
 
+        bullets: list[str] = []
         for item in evidence[:3]:
             for sentence in _relevant_sentences(item["snippet"], request.utterance, limit=1):
                 # Don't repeat a point the interrupted half of the answer made.
                 if sentence.lower()[:40] in already_said:
                     continue
-                parts.append(f"- {sentence}  [{item['doc_id']}]\n")
+                bullets.append(f"- {sentence}  [{item['doc_id']}]\n")
+
+        if not bullets and request.resume_from:
+            # Everything relevant was already said before the interruption, so
+            # a resume would otherwise be nothing but preamble. Carry on with
+            # the next passage instead of trailing off.
+            for item in evidence:
+                extra = _relevant_sentences(item["snippet"], request.goal, limit=1)
+                for sentence in extra:
+                    if sentence.lower()[:40] not in already_said:
+                        bullets.append(f"- {sentence}  [{item['doc_id']}]\n")
+                        break
+                if bullets:
+                    break
+
+        parts.extend(bullets)
 
         if request.constraints:
             parts.append(
