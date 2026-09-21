@@ -93,7 +93,9 @@ async def scenarios() -> dict[str, Any]:
                 "blurb": "Swerve to a different goal mid-task, then come back. The first goal is parked, not lost.",
                 "steps": [
                     {"kind": "say", "text": "Find me a flight from Bengaluru to Mumbai on Friday"},
+                    {"kind": "wait_idle"},
                     {"kind": "say", "text": "actually, what happens to my refund if I cancel?"},
+                    {"kind": "wait_idle"},
                     {"kind": "say", "text": "anyway, back to the flight"},
                 ],
             },
@@ -103,6 +105,7 @@ async def scenarios() -> dict[str, Any]:
                 "blurb": "A terse amendment with no shared nouns still lands on the right goal.",
                 "steps": [
                     {"kind": "say", "text": "Which hotel should I book in Mumbai?"},
+                    {"kind": "wait_idle"},
                     {"kind": "say", "text": "make it under 9000 a night"},
                 ],
             },

@@ -95,7 +95,8 @@ class MockProvider:
 
         bullets: list[str] = []
         for item in evidence[:3]:
-            for sentence in _relevant_sentences(item["snippet"], request.utterance, limit=1):
+            topic = f"{request.goal} {request.utterance}"
+            for sentence in _relevant_sentences(item["snippet"], topic, limit=1):
                 # Don't repeat a point the interrupted half of the answer made.
                 if sentence.lower()[:40] in already_said:
                     continue

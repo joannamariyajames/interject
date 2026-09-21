@@ -3,7 +3,7 @@ import { Moon, Play, RotateCcw, Square, Sun, Trash2, Wand2 } from "lucide-react"
 import { Badge, Button, Panel, SectionLabel, Toggle } from "~/components/ui/primitives";
 import { GoalStack } from "~/components/GoalStack";
 import { Logo } from "~/components/Logo";
-import { useScenarioRunner } from "~/lib/scenarios";
+import { useScenarios } from "~/lib/scenarios";
 import { useSession } from "~/store/session";
 import { cn } from "~/lib/utils";
 
@@ -22,10 +22,10 @@ function useTheme() {
   return { dark, toggle: () => setDark((value) => !value) };
 }
 
-export function Sidebar() {
+export function Sidebar({ onAction }: { onAction?: () => void } = {}) {
   const { goals, goalAction, goalRationale, strictHarness, setStrictHarness, tokenDelayMs, setTokenDelay, reset, provider, sessionId, speculationOn } =
     useSession();
-  const { scenarios, running, run, stop } = useScenarioRunner();
+  const { scenarios, running, run, stop } = useScenarios();
   const { dark, toggle } = useTheme();
 
   return (
@@ -61,7 +61,11 @@ export function Sidebar() {
               return (
                 <button
                   key={scenario.id}
-                  onClick={() => (isRunning ? stop() : run(scenario))}
+                  onClick={() => {
+                    onAction?.();
+                    if (isRunning) stop();
+                    else void run(scenario);
+                  }}
                   disabled={running !== null && !isRunning}
                   className={cn(
                     "group rounded-[var(--radius-item)] border px-2.5 py-2 text-left transition-colors",

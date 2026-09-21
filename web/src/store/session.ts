@@ -9,6 +9,7 @@ import type {
   Modality,
   ServerFrame,
   SpecRecord,
+  Scenario,
   Stage,
   TimelineEvent,
   ToolRecord,
@@ -19,6 +20,9 @@ const METRIC_CAP = 60;
 
 let socket: AgentSocket | null = null;
 let eventSeq = 0;
+let scenarioCancelled = false;
+
+const sleep = (msValue: number) => new Promise((resolve) => setTimeout(resolve, msValue));
 
 function event(
   kind: TimelineEvent["kind"],
@@ -74,6 +78,9 @@ export interface SessionState {
   resumes: number;
   lastError: string | null;
 
+  scenarios: Scenario[];
+  runningScenario: string | null;
+
   draft: string;
   modality: Modality;
   strictHarness: boolean;
@@ -82,6 +89,9 @@ export interface SessionState {
 
   connect: () => void;
   disconnect: () => void;
+  loadScenarios: () => void;
+  runScenario: (scenario: Scenario) => Promise<void>;
+  stopScenario: () => void;
   setDraft: (value: string) => void;
   setModality: (value: Modality) => void;
   submit: (text?: string) => void;
@@ -118,6 +128,9 @@ export const useSession = create<SessionState>((set, get) => ({
   resumes: 0,
   lastError: null,
 
+  scenarios: [],
+  runningScenario: null,
+
   draft: "",
   modality: "text",
   strictHarness: true,
@@ -136,6 +149,61 @@ export const useSession = create<SessionState>((set, get) => ({
   disconnect: () => {
     socket?.close();
     socket = null;
+  },
+
+  loadScenarios: () => {
+    if (get().scenarios.length) return;
+    fetch("/api/scenarios")
+      .then((response) => response.json())
+      .then((data) => set({ scenarios: data.scenarios ?? [] }))
+      .catch(() => {
+        /* the demo still works by hand without the scripted list */
+      });
+  },
+
+  runScenario: async (scenario) => {
+    scenarioCancelled = false;
+    set({ runningScenario: scenario.id });
+
+    const waitForIdle = async (budgetMs: number) => {
+      const deadline = Date.now() + budgetMs;
+      // Give the server a beat to leave idle before deciding it already landed.
+      await sleep(250);
+      while (get().stage !== "idle" && Date.now() < deadline) {
+        if (scenarioCancelled) return;
+        await sleep(60);
+      }
+    };
+
+    for (const step of scenario.steps) {
+      if (scenarioCancelled) break;
+
+      if (step.kind === "say" && step.text) {
+        get().submit(step.text);
+        await sleep(400);
+      } else if (step.kind === "interrupt") {
+        get().interrupt("barge_in");
+        await sleep(500);
+      } else if (step.kind === "wait_idle") {
+        await waitForIdle(15000);
+        await sleep(350);
+      } else if (step.kind === "wait_tokens") {
+        const target = step.count ?? 10;
+        const deadline = Date.now() + 8000;
+        while (get().tokensThisTurn < target && Date.now() < deadline) {
+          if (scenarioCancelled) break;
+          await sleep(40);
+        }
+      }
+    }
+
+    await waitForIdle(12000);
+    set({ runningScenario: null });
+  },
+
+  stopScenario: () => {
+    scenarioCancelled = true;
+    set({ runningScenario: null });
   },
 
   setDraft: (value) => {

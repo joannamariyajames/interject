@@ -260,11 +260,23 @@ class AgentRuntime:
                     )
 
             # -- 3. retrieval, speculative if we can ---------------------
+            # A terse follow-up ("make it under 9000", "anyway, back to the
+            # flight") carries almost no topic of its own. Retrieving on those
+            # words alone answers the wrong question, so the active goal and its
+            # constraints are folded into the query. Only a self-contained
+            # utterance is allowed to reuse a speculation, because speculation
+            # ran against the raw partial text and knows nothing of the goal.
+            self_contained = classification.action in (GoalAction.PUSH, GoalAction.SWITCH)
+            if self_contained:
+                query = utterance
+            else:
+                query = " ".join([goal.text, *goal.constraints, utterance])
+
             await self.emit(StageFrame(stage=Stage.RETRIEVING, turn_id=turn_id, detail="Gathering evidence"))
             budget = self.harness.new_budget()
             evidence = carried_evidence
             if not evidence:
-                evidence = await self._retrieve(utterance, budget)
+                evidence = await self._retrieve(query, budget, use_speculation=self_contained)
             else:
                 await self.emit(
                     SpecFrame(
@@ -378,9 +390,20 @@ class AgentRuntime:
                 )
 
     # ------------------------------------------------------------------
-    async def _retrieve(self, utterance: str, budget: TurnBudget) -> list[dict[str, str]]:
+    async def _retrieve(
+        self, query: str, budget: TurnBudget, use_speculation: bool = True
+    ) -> list[dict[str, str]]:
         """Settle speculation first; fall back to a cold retrieval on a miss."""
-        result = await self.speculation.settle(utterance)
+        if not use_speculation:
+            self.speculation.cancel_all()
+            await self.emit(
+                SpecFrame(
+                    status="discarded", query=query, saved_ms=0.0,
+                )
+            )
+            return await self._cold_retrieve(query, budget)
+
+        result = await self.speculation.settle(query)
         if result.hit:
             await self.emit(
                 SpecFrame(
@@ -397,10 +420,13 @@ class AgentRuntime:
             return _hits_to_evidence(result.hits)
 
         await self.emit(
-            SpecFrame(status="miss", query=result.query or utterance, saved_ms=0.0)
+            SpecFrame(status="miss", query=result.query or query, saved_ms=0.0)
         )
+        return await self._cold_retrieve(query, budget)
+
+    async def _cold_retrieve(self, query: str, budget: TurnBudget) -> list[dict[str, str]]:
         outcome = await self.harness.call(
-            "search_corpus", budget, query=utterance, latency_ms=settings.retrieval_latency_ms
+            "search_corpus", budget, query=query, latency_ms=settings.retrieval_latency_ms
         )
         await self.emit(
             ToolFrame(

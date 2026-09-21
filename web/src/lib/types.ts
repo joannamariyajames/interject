@@ -84,7 +84,7 @@ export interface TimelineEvent {
 }
 
 export interface ScenarioStep {
-  kind: "say" | "interrupt" | "wait_tokens";
+  kind: "say" | "interrupt" | "wait_tokens" | "wait_idle";
   text?: string;
   count?: number;
 }

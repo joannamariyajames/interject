@@ -157,3 +157,37 @@ async def test_the_harness_blocks_a_booking_and_the_answer_says_so():
     assert blocked[-1]["name"] == "send_booking"
     assert "confirmation" in blocked[-1]["verdict"]
     assert "can't put that booking through" in collector.text()
+
+
+async def test_a_revert_retrieves_against_the_restored_goal_not_the_bare_words():
+    """"anyway, back to the flight" carries no topic of its own.
+
+    Retrieving on those words alone answered the previous question again,
+    which is precisely the "losing the relevant session context" failure.
+    """
+    runtime, collector, _ = make()
+    await runtime.on_final("Find me a flight from Bengaluru to Mumbai on Friday")
+    await runtime._task
+    await runtime.on_final("actually, what happens to my refund if I cancel?")
+    await runtime._task
+
+    before = len(collector.of("message"))
+    await runtime.on_final("anyway, back to the flight")
+    await runtime._task
+
+    answer = collector.of("message")[-1]
+    assert len(collector.of("message")) > before
+    docs = answer["meta"]["evidence"]
+    assert any(d.startswith("flights") for d in docs), f"answered off the wrong corpus: {docs}"
+    assert docs[0].startswith("flights"), f"top passage should be about flights, got {docs}"
+
+
+async def test_a_terse_refinement_keeps_the_goal_topic():
+    runtime, collector, _ = make()
+    await runtime.on_final("Which hotel should I book in Mumbai?")
+    await runtime._task
+    await runtime.on_final("make it under 9000 a night")
+    await runtime._task
+
+    docs = collector.of("message")[-1]["meta"]["evidence"]
+    assert any(d.startswith("hotels") for d in docs), f"lost the hotel topic: {docs}"

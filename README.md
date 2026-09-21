@@ -165,8 +165,9 @@ refuses an irreversible call.
   its rationale to the UI so you can see when it does.
 - BM25 over a 15-document corpus occasionally surfaces a loosely related passage.
   Answers cite their `doc_id`s so a wrong pull is visible rather than laundered.
-- The sidebar and telemetry rail are desktop-first; below `xl` the rail hides and
-  below `lg` the sidebar does too. The chat itself works at phone width.
+- The telemetry rail is desktop-first: it is shown by default from 1280px and can
+  be toggled on from 1024px. Below 768px the sidebar moves into a slide-over
+  drawer behind the menu button. The chat itself works at phone width.
 
 
 
