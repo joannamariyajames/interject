@@ -5,6 +5,11 @@
 Built for **Theme 05 - Interruptible Real-Time Agents**, Samsung PRISM Y2026 GenAI
 Hackathon (3rd Edition).
 
+[![CI](https://github.com/joannamariyajames/interject/actions/workflows/ci.yml/badge.svg)](https://github.com/joannamariyajames/interject/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+![Python 3.11+](https://img.shields.io/badge/python-3.11+-3776ab.svg)
+![Node 20+](https://img.shields.io/badge/node-20+-5fa04e.svg)
+
 Most assistants take turns: listen, think, speak. Interrupt one and it either
 goes silent while it reasons, or throws the whole turn away and starts again.
 Interject does neither. It starts retrieving before you stop typing, it stops
