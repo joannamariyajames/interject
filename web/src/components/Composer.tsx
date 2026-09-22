@@ -56,7 +56,7 @@ export function Composer() {
   }, [interrupt]);
 
   return (
-    <div className="shrink-0 border-t border-line bg-panel/80 px-5 py-3.5 backdrop-blur">
+    <div className="shrink-0 border-t border-line/70 px-5 py-4 backdrop-blur-xl">
       <div className="mx-auto flex max-w-3xl flex-col gap-2.5">
         <AnimatePresence>
           {agentSpeaking ? (
@@ -88,8 +88,8 @@ export function Composer() {
 
         {transcripts.length ? (
           <div className="flex flex-wrap items-center gap-1.5">
-            <span className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted">
-              <Mic size={11} /> Speak
+            <span className="eyebrow flex items-center gap-1.5">
+              <Mic size={10} /> Speak
             </span>
             {transcripts.map((transcript) => {
               const isSpeaking = speaking === transcript.id;
@@ -103,7 +103,7 @@ export function Composer() {
                     "flex items-center gap-1.5 rounded-[var(--radius-pill)] border px-2.5 py-1 text-[11px] transition-colors disabled:opacity-40",
                     isSpeaking
                       ? "border-live bg-live-soft text-live"
-                      : "border-line text-muted hover:border-live/60 hover:text-foreground",
+                      : "border-line/70 text-muted hover:border-live/60 hover:text-foreground",
                   )}
                 >
                   {isSpeaking ? <Square size={9} /> : <Mic size={10} />}
@@ -119,7 +119,7 @@ export function Composer() {
 
         <div
           className={cn(
-            "flex items-end gap-2 rounded-[var(--radius-panel)] border bg-surface p-2 transition-colors",
+            "flex items-end gap-2 rounded-[var(--radius-panel)] border bg-surface/55 p-2 backdrop-blur-sm transition-colors",
             agentSpeaking ? "border-accent/45" : speaking ? "border-live/60" : "border-line",
           )}
         >

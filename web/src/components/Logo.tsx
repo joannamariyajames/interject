@@ -7,7 +7,7 @@ export function Logo({ size = 30 }: { size?: number }) {
           <stop offset="100%" stopColor="var(--warn)" />
         </linearGradient>
       </defs>
-      <rect width="32" height="32" rx="10" fill="url(#interject-mark)" />
+      <rect width="32" height="32" rx="9" fill="url(#interject-mark)" />
       {/* A speech wave cut clean through the middle: the interruption. */}
       <g fill="var(--accent-foreground)">
         <rect x="7" y="13" width="2.6" height="6" rx="1.3" opacity="0.9" />

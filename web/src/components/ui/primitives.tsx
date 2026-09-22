@@ -9,9 +9,9 @@ type ButtonSize = "sm" | "md" | "lg" | "icon";
 const VARIANTS: Record<ButtonVariant, string> = {
   primary:
     "bg-accent text-accent-foreground hover:brightness-110 active:brightness-95 shadow-[var(--shadow-soft)]",
-  soft: "bg-subtle text-foreground hover:bg-line",
+  soft: "bg-elevated text-foreground hover:bg-line",
   ghost: "text-muted hover:text-foreground hover:bg-subtle",
-  outline: "border border-line bg-surface text-foreground hover:bg-subtle",
+  outline: "border border-line/80 bg-transparent text-foreground hover:border-line hover:bg-subtle",
   danger: "bg-danger text-white hover:brightness-110",
 };
 
@@ -51,8 +51,8 @@ export function Panel({ className, ...props }: React.HTMLAttributes<HTMLDivEleme
   return (
     <div
       className={cn(
-        "flex min-h-0 flex-col rounded-[var(--radius-panel)] border border-line bg-panel",
-        "shadow-[var(--shadow-soft)]",
+        "flex min-h-0 flex-col rounded-[var(--radius-panel)] border border-line/70 bg-panel/85",
+        "shadow-[var(--shadow-lift)] backdrop-blur-xl",
         className,
       )}
       {...props}
@@ -63,10 +63,7 @@ export function Panel({ className, ...props }: React.HTMLAttributes<HTMLDivEleme
 export function SectionLabel({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn(
-        "px-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted",
-        className,
-      )}
+      className={cn("eyebrow px-1", className)}
       {...props}
     />
   );
@@ -94,7 +91,7 @@ export function Badge({
     <span
       className={cn(
         "inline-flex items-center gap-1 rounded-[var(--radius-pill)] px-2 py-0.5",
-        "text-[11px] font-medium leading-5 whitespace-nowrap",
+        "text-[10.5px] font-medium leading-5 whitespace-nowrap tracking-[0.01em]",
         TONES[tone],
         className,
       )}
@@ -130,7 +127,7 @@ export function Toggle({
         onClick={() => onChange(!checked)}
         className={cn(
           "relative h-5 w-9 shrink-0 rounded-full transition-colors duration-200",
-          checked ? "bg-accent" : "bg-line",
+          checked ? "bg-accent" : "bg-elevated",
         )}
       >
         <span

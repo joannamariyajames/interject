@@ -30,11 +30,11 @@ export function Sidebar({ onAction }: { onAction?: () => void } = {}) {
 
   return (
     <Panel className="w-[286px] shrink-0 overflow-hidden">
-      <header className="flex items-center gap-2.5 border-b border-line px-4 py-3.5">
+      <header className="flex items-center gap-2.5 border-b border-line/70 px-4 py-4">
         <Logo />
         <div className="min-w-0">
-          <h1 className="text-sm font-semibold leading-tight tracking-tight">Interject</h1>
-          <p className="truncate text-[11px] text-muted">Interruptible real-time agent</p>
+          <h1 className="display text-lg leading-none">Interject</h1>
+          <p className="eyebrow mt-1 truncate">Interruptible agent</p>
         </div>
         <button
           onClick={toggle}
@@ -71,8 +71,8 @@ export function Sidebar({ onAction }: { onAction?: () => void } = {}) {
                     "group rounded-[var(--radius-item)] border px-2.5 py-2 text-left transition-colors",
                     "disabled:opacity-40",
                     isRunning
-                      ? "border-accent/50 bg-accent-soft/45"
-                      : "border-line bg-surface hover:border-accent/40",
+                      ? "border-accent/50 bg-accent-soft/35"
+                      : "border-line/60 bg-surface/40 hover:border-line",
                   )}
                 >
                   <div className="flex items-start gap-2.5">
@@ -81,7 +81,7 @@ export function Sidebar({ onAction }: { onAction?: () => void } = {}) {
                         "mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-[10px] transition-colors",
                         isRunning
                           ? "bg-accent text-accent-foreground"
-                          : "bg-subtle text-muted group-hover:bg-accent-soft group-hover:text-accent",
+                          : "border border-line/70 text-muted group-hover:border-accent/50 group-hover:text-accent",
                       )}
                     >
                       {isRunning ? <Square size={12} /> : <Play size={12} />}
@@ -140,7 +140,7 @@ export function Sidebar({ onAction }: { onAction?: () => void } = {}) {
         </section>
       </div>
 
-      <footer className="flex flex-wrap items-center gap-1.5 border-t border-line px-4 py-3">
+      <footer className="flex flex-wrap items-center gap-1.5 border-t border-line/70 px-4 py-3">
         <Badge tone={speculationOn ? "live" : "neutral"}>
           <RotateCcw size={10} /> speculation {speculationOn ? "on" : "off"}
         </Badge>

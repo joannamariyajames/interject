@@ -64,7 +64,7 @@ function ActivityGrid() {
           <div
             key={index}
             title={`${index * 5}-${index * 5 + 5}s - ${count} event${count === 1 ? "" : "s"}`}
-            className="aspect-square rounded-[4px] transition-colors duration-300"
+            className="aspect-square rounded-[3px] transition-colors duration-300"
             style={{
               background:
                 count === 0
@@ -149,10 +149,10 @@ export function MindRail() {
 
   return (
     <Panel className="w-[360px] shrink-0 overflow-hidden">
-      <header className="flex shrink-0 items-center gap-2 border-b border-line px-4 py-3">
-        <Activity size={15} className="text-accent" />
-        <h2 className="text-sm font-semibold tracking-tight">Agent mind</h2>
-        <span className="ml-auto flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wider text-muted">
+      <header className="flex shrink-0 items-center gap-2.5 border-b border-line/70 px-4 py-4">
+        <Activity size={14} className="text-gold" />
+        <h2 className="display text-base leading-none">Agent mind</h2>
+        <span className="eyebrow ml-auto flex items-center gap-1.5">
           <span className="h-1.5 w-1.5 rounded-full bg-live pulse-live" />
           live
         </span>
@@ -166,7 +166,7 @@ export function MindRail() {
         {/* Headline numbers, asymmetric on purpose so the eye has a path. */}
         <section className="grid shrink-0 grid-cols-2 gap-2">
           <StatCard
-            wide
+            hero
             fill="accent"
             label="Average time to yield"
             value={avgYield === null ? "--" : avgYield.toFixed(2)}

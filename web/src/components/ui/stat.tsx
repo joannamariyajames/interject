@@ -1,23 +1,22 @@
-import * as React from "react";
 import { cn } from "~/lib/utils";
 
 export type Fill = "teal" | "blue" | "violet" | "amber" | "slate" | "accent";
 
-const FILLS: Record<Fill, string> = {
-  teal: "bg-fill-teal text-fill-teal-ink",
-  blue: "bg-fill-blue text-fill-blue-ink",
-  violet: "bg-fill-violet text-fill-violet-ink",
-  amber: "bg-fill-amber text-fill-amber-ink",
-  slate: "bg-fill-slate text-fill-slate-ink",
-  accent: "bg-accent text-accent-foreground",
+const HUE: Record<Fill, string> = {
+  teal: "var(--fill-teal)",
+  blue: "var(--fill-blue)",
+  violet: "var(--fill-violet)",
+  amber: "var(--fill-amber)",
+  slate: "var(--muted)",
+  accent: "var(--accent)",
 };
 
 /**
- * A big number on a solid colour.
+ * A measurement, set like a figure in a magazine.
  *
- * The LastChat statistics screen reads well because the value carries the
- * colour rather than sitting inside a tinted outline, so the eye lands on the
- * number first and the label second.
+ * Colour is a one-pixel keyline and the numeral, not a flood fill: on black,
+ * a solid colour block reads as a template, while a hairline and a warm
+ * numeral read as considered.
  */
 export function StatCard({
   label,
@@ -25,35 +24,46 @@ export function StatCard({
   unit,
   hint,
   fill = "slate",
-  icon,
-  wide = false,
+  hero = false,
 }: {
   label: string;
   value: string;
   unit?: string;
   hint?: string;
   fill?: Fill;
-  icon?: React.ReactNode;
-  wide?: boolean;
+  hero?: boolean;
 }) {
+  const hue = HUE[fill];
   return (
     <div
       className={cn(
-        "flex min-w-0 flex-col justify-between rounded-[var(--radius-card)] p-3.5",
-        "transition-transform duration-200 hover:-translate-y-0.5",
-        FILLS[fill],
-        wide && "col-span-2",
+        "keyline group flex min-w-0 flex-col justify-between rounded-[var(--radius-card)]",
+        "border border-line/70 bg-surface/60 px-3.5 py-3 backdrop-blur-sm",
+        "transition-colors duration-300 hover:border-line",
+        hero && "col-span-2 px-4 py-4",
       )}
+      style={{ ["--keyline-color" as string]: hue }}
     >
-      {icon ? <div className="mb-3 opacity-70">{icon}</div> : null}
-      <div>
-        <div className="flex items-baseline gap-1">
-          <span className="font-mono text-2xl leading-none font-semibold tabular-nums">{value}</span>
-          {unit ? <span className="text-xs font-medium opacity-70">{unit}</span> : null}
-        </div>
-        <div className="mt-1.5 text-[11px] font-medium opacity-80">{label}</div>
-        {hint ? <div className="mt-0.5 truncate text-[10px] opacity-65" title={hint}>{hint}</div> : null}
+      <div className="eyebrow truncate">{label}</div>
+      <div className="mt-2 flex items-baseline gap-1.5">
+        {/* Sans, not the display serif. Instrument Serif's numerals are lovely
+            at headline size and unreadable at 28px - a zero reads as "()". */}
+        <span
+          className={cn(
+            "font-light tabular-nums leading-none tracking-[-0.03em]",
+            hero ? "text-[2.4rem]" : "text-[1.6rem]",
+          )}
+          style={{ color: hue }}
+        >
+          {value}
+        </span>
+        {unit ? <span className="text-[11px] font-medium text-muted">{unit}</span> : null}
       </div>
+      {hint ? (
+        <div className="mt-1.5 truncate text-[10.5px] leading-relaxed text-muted" title={hint}>
+          {hint}
+        </div>
+      ) : null}
     </div>
   );
 }

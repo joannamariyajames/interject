@@ -89,7 +89,7 @@ export default function App() {
       </AnimatePresence>
 
       <Panel className="min-w-0 flex-1 overflow-hidden">
-        <header className="flex shrink-0 items-center gap-3 border-b border-line px-5 py-3">
+        <header className="flex shrink-0 items-center gap-3 border-b border-line/70 px-5 py-4">
           <Button
             variant="ghost"
             size="icon"
@@ -101,9 +101,9 @@ export default function App() {
           </Button>
 
           <div className="min-w-0">
-            <h2 className="truncate text-sm font-semibold tracking-tight">Live session</h2>
-            <p className="truncate text-[11px] text-muted">
-              Full duplex - it keeps working while you type, and stops the moment you cut in
+            <h2 className="display truncate text-base leading-none">Live session</h2>
+            <p className="eyebrow mt-1 truncate">
+              Full duplex &middot; it stops the moment you cut in
             </p>
           </div>
 
