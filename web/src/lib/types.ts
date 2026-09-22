@@ -17,7 +17,8 @@ export type GoalAction =
   | "refine"
   | "switch"
   | "revert"
-  | "complete";
+  | "complete"
+  | "progress";
 
 export type Modality = "text" | "voice" | "image";
 
@@ -27,6 +28,22 @@ export interface Goal {
   status: "active" | "parked" | "done";
   constraints: string[];
   turns: number;
+  steps: string[];
+  step_index: number;
+  progress: number;
+}
+
+export interface Nudge {
+  goalId: string;
+  text: string;
+  prompt: string;
+}
+
+export interface Transcript {
+  id: string;
+  label: string;
+  text: string;
+  wpm: number;
 }
 
 export interface ChatMessage {
@@ -112,6 +129,8 @@ export type ServerFrame =
       meta: Record<string, unknown>;
     }
   | { t: "goal"; ts: number; action: GoalAction; stack: Goal[]; rationale: string }
+  | { t: "filler"; ts: number; turn_id: string; text: string }
+  | { t: "nudge"; ts: number; goal_id: string; text: string; prompt: string }
   | {
       t: "spec";
       ts: number;

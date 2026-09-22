@@ -71,6 +71,45 @@ async def list_tools() -> dict[str, Any]:
     }
 
 
+@app.get("/api/transcripts")
+async def transcripts() -> dict[str, Any]:
+    """Canned speech transcripts for the simulated voice input.
+
+    The brief allows voice to be simulated from transcripts. The client replays
+    these word by word at a speaking cadence, emitting the same partial frames a
+    real recogniser would, so the full-duplex path is exercised honestly rather
+    than by pasting a finished sentence.
+    """
+    return {
+        "transcripts": [
+            {
+                "id": "baggage",
+                "label": "Baggage question",
+                "text": "what are the baggage limits on each cabin",
+                "wpm": 150,
+            },
+            {
+                "id": "flight",
+                "label": "Flight request",
+                "text": "find me a flight from Bengaluru to Mumbai on Friday morning",
+                "wpm": 165,
+            },
+            {
+                "id": "refund",
+                "label": "Mid-thought swerve",
+                "text": "actually wait what happens to my refund if I cancel this",
+                "wpm": 180,
+            },
+            {
+                "id": "delay",
+                "label": "Disruption",
+                "text": "my flight is delayed overnight what am I entitled to",
+                "wpm": 155,
+            },
+        ]
+    }
+
+
 @app.get("/api/scenarios")
 async def scenarios() -> dict[str, Any]:
     """Scripted demos. The UI can replay these to show each behaviour on cue."""

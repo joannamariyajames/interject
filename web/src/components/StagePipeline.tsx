@@ -2,13 +2,13 @@ import { motion } from "motion/react";
 import { cn } from "~/lib/utils";
 import type { Stage } from "~/lib/types";
 
-/** The path a turn walks. Interruption states are drawn off to the side. */
-const PIPELINE: { stage: Stage; label: string }[] = [
-  { stage: "listening", label: "Listen" },
-  { stage: "planning", label: "Plan" },
-  { stage: "retrieving", label: "Retrieve" },
-  { stage: "reasoning", label: "Reason" },
-  { stage: "responding", label: "Respond" },
+/** The path a turn walks, each phase in its own colour. */
+const PIPELINE: { stage: Stage; label: string; hue: string }[] = [
+  { stage: "listening", label: "Listen", hue: "var(--stage-listening)" },
+  { stage: "planning", label: "Plan", hue: "var(--stage-planning)" },
+  { stage: "retrieving", label: "Retrieve", hue: "var(--stage-retrieving)" },
+  { stage: "reasoning", label: "Reason", hue: "var(--stage-reasoning)" },
+  { stage: "responding", label: "Respond", hue: "var(--stage-responding)" },
 ];
 
 const ORDER: Stage[] = ["listening", "planning", "retrieving", "tooling", "reasoning", "responding"];
@@ -19,7 +19,7 @@ export function StagePipeline({ stage, detail }: { stage: Stage; detail: string 
 
   return (
     <section className="flex flex-col gap-2.5">
-      <div className="flex items-stretch gap-1">
+      <div className="flex items-end gap-1.5">
         {PIPELINE.map((step) => {
           const stepIndex = ORDER.indexOf(step.stage);
           const isActive = !broken && stage === step.stage;
@@ -28,29 +28,32 @@ export function StagePipeline({ stage, detail }: { stage: Stage; detail: string 
             <div key={step.stage} className="flex-1">
               <div
                 className={cn(
-                  "h-1.5 rounded-full transition-colors duration-300",
-                  broken
-                    ? "bg-accent/25"
-                    : isActive
-                      ? "bg-live"
-                      : isPast
-                        ? "bg-live/45"
-                        : "bg-line",
+                  "relative h-2 overflow-hidden rounded-full transition-all duration-300",
+                  isActive && "sweep",
                 )}
+                style={{
+                  background: broken
+                    ? "color-mix(in oklab, var(--accent) 22%, var(--line))"
+                    : isActive || isPast
+                      ? step.hue
+                      : "var(--line)",
+                  opacity: broken ? 0.5 : isPast ? 0.5 : 1,
+                }}
               >
                 {isActive ? (
-                  <motion.div
-                    layoutId="stage-glow"
-                    className="h-1.5 rounded-full bg-live"
+                  <motion.span
+                    layoutId="stage-dot"
+                    className="absolute inset-0 rounded-full"
+                    style={{ background: step.hue }}
                     transition={{ type: "spring", stiffness: 320, damping: 30 }}
                   />
                 ) : null}
               </div>
               <div
-                className={cn(
-                  "mt-1.5 truncate text-[10px] font-medium tracking-tight transition-colors",
-                  isActive ? "text-live" : isPast ? "text-muted" : "text-muted/60",
-                )}
+                className="mt-1.5 truncate text-[10px] font-semibold tracking-tight transition-colors"
+                style={{
+                  color: isActive ? step.hue : isPast ? "var(--muted)" : "color-mix(in oklab, var(--muted) 55%, transparent)",
+                }}
               >
                 {step.label}
               </div>
@@ -61,18 +64,25 @@ export function StagePipeline({ stage, detail }: { stage: Stage; detail: string 
 
       <div
         className={cn(
-          "flex items-center gap-2 rounded-[var(--radius-item)] border px-2.5 py-2",
-          broken ? "border-accent/45 bg-accent-soft/50" : "border-line bg-surface",
+          "flex items-center gap-2.5 rounded-[var(--radius-item)] px-3 py-2.5",
+          broken ? "cut-stripe bg-accent-soft/45" : "bg-surface",
         )}
       >
         <span
           className={cn(
-            "h-2 w-2 shrink-0 rounded-full",
-            broken ? "bg-accent pulse-accent" : stage === "idle" ? "bg-muted" : "bg-live pulse-live",
+            "h-2.5 w-2.5 shrink-0 rounded-full",
+            broken ? "bg-accent pulse-accent" : stage === "idle" ? "bg-muted" : "pulse-live",
           )}
+          style={
+            broken || stage === "idle"
+              ? undefined
+              : { background: PIPELINE.find((p) => p.stage === stage)?.hue ?? "var(--live)" }
+          }
         />
         <div className="min-w-0">
-          <div className="font-mono text-[11px] uppercase tracking-wider text-foreground">{stage}</div>
+          <div className="font-mono text-[11px] font-semibold uppercase tracking-wider text-foreground">
+            {stage}
+          </div>
           <div className="truncate text-[11px] text-muted" title={detail}>
             {detail || " "}
           </div>

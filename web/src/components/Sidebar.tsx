@@ -90,7 +90,7 @@ export function Sidebar({ onAction }: { onAction?: () => void } = {}) {
                       <span className="block truncate text-xs font-medium">{scenario.title}</span>
                       <div className="mt-1 flex flex-wrap gap-1">
                         <Badge tone={isRunning ? "accent" : "neutral"} className="py-0">
-                          {isRunning ? "running" : `${scenario.steps.length} steps`}
+                          {isRunning ? "running" : `${scenario.steps.length} step${scenario.steps.length === 1 ? "" : "s"}`}
                         </Badge>
                       </div>
                       <p className="mt-1.5 text-[11px] leading-snug text-muted">{scenario.blurb}</p>

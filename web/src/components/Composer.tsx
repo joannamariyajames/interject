@@ -1,7 +1,8 @@
 import { useEffect, useRef } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { ArrowUp, AudioLines, Hand, ImageIcon, Keyboard } from "lucide-react";
+import { ArrowUp, AudioLines, Hand, ImageIcon, Keyboard, Mic, Square } from "lucide-react";
 import { Button } from "~/components/ui/primitives";
+import { useVoiceReplay } from "~/lib/voice";
 import { useSession } from "~/store/session";
 import { cn } from "~/lib/utils";
 import type { Modality } from "~/lib/types";
@@ -29,6 +30,7 @@ function LiveWave() {
 
 export function Composer() {
   const { draft, setDraft, submit, interrupt, modality, setModality, stage, status } = useSession();
+  const { transcripts, speaking, speak, stop } = useVoiceReplay();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const agentSpeaking = stage === "responding" || stage === "reasoning" || stage === "retrieving" || stage === "planning";
@@ -84,10 +86,41 @@ export function Composer() {
           ) : null}
         </AnimatePresence>
 
+        {transcripts.length ? (
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted">
+              <Mic size={11} /> Speak
+            </span>
+            {transcripts.map((transcript) => {
+              const isSpeaking = speaking === transcript.id;
+              return (
+                <button
+                  key={transcript.id}
+                  onClick={() => (isSpeaking ? stop() : void speak(transcript))}
+                  disabled={speaking !== null && !isSpeaking}
+                  title={transcript.text}
+                  className={cn(
+                    "flex items-center gap-1.5 rounded-[var(--radius-pill)] border px-2.5 py-1 text-[11px] transition-colors disabled:opacity-40",
+                    isSpeaking
+                      ? "border-live bg-live-soft text-live"
+                      : "border-line text-muted hover:border-live/60 hover:text-foreground",
+                  )}
+                >
+                  {isSpeaking ? <Square size={9} /> : <Mic size={10} />}
+                  {transcript.label}
+                </button>
+              );
+            })}
+            <span className="text-[10px] text-muted">
+              replayed word by word - cut in while it talks
+            </span>
+          </div>
+        ) : null}
+
         <div
           className={cn(
             "flex items-end gap-2 rounded-[var(--radius-panel)] border bg-surface p-2 transition-colors",
-            agentSpeaking ? "border-accent/45" : "border-line",
+            agentSpeaking ? "border-accent/45" : speaking ? "border-live/60" : "border-line",
           )}
         >
           <div className="flex shrink-0 gap-0.5 self-end pb-0.5">

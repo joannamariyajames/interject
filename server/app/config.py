@@ -52,8 +52,12 @@ class Settings:
     speculation_enabled: bool = field(default_factory=lambda: _env_bool("SPECULATION", True))
     speculation_debounce_ms: int = field(default_factory=lambda: _env_int("SPEC_DEBOUNCE_MS", 110))
     speculation_min_chars: int = field(default_factory=lambda: _env_int("SPEC_MIN_CHARS", 12))
+    # Deliberately loose. Scoring only has to pick a plausible candidate; the
+    # runtime then verifies the speculated passages against the finished
+    # utterance before using them, so a generous threshold costs a discarded
+    # prefetch rather than a wrong answer.
     speculation_match_threshold: float = field(
-        default_factory=lambda: _env_float("SPEC_MATCH_THRESHOLD", 0.55)
+        default_factory=lambda: _env_float("SPEC_MATCH_THRESHOLD", 0.45)
     )
 
     # --- harness --------------------------------------------------------

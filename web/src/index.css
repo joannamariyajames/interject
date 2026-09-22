@@ -138,6 +138,20 @@
   --shadow-lift: var(--shadow-lift);
 }
 
+/* ------------------------------------------------------------------
+   Stage colours.
+
+   Each phase of a turn gets its own hue, so the pipeline reads as a
+   journey rather than one green bar creeping along.
+   ------------------------------------------------------------------ */
+:root {
+  --stage-listening: var(--fill-blue);
+  --stage-planning: var(--fill-violet);
+  --stage-retrieving: var(--fill-teal);
+  --stage-reasoning: var(--fill-amber);
+  --stage-responding: var(--live);
+}
+
 * {
   border-color: var(--line);
 }
@@ -151,6 +165,11 @@ body,
 body {
   margin: 0;
   background: var(--background);
+  background-image:
+    radial-gradient(900px 420px at 12% -8%, color-mix(in oklab, var(--fill-violet) 13%, transparent), transparent 70%),
+    radial-gradient(760px 380px at 92% 6%, color-mix(in oklab, var(--fill-teal) 12%, transparent), transparent 70%),
+    radial-gradient(620px 420px at 55% 108%, color-mix(in oklab, var(--accent) 9%, transparent), transparent 70%);
+  background-attachment: fixed;
   color: var(--foreground);
   font-family: Inter, ui-sans-serif, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -243,4 +262,73 @@ body {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+
+/* ------------------------------------------------------------------
+   Surface treatment
+   ------------------------------------------------------------------ */
+
+/* A faint film of grain over the whole page. Flat fills read as
+   synthetic; a little noise gives the panels something to sit on. */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.4;
+  mix-blend-mode: soft-light;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+}
+
+#root {
+  position: relative;
+  z-index: 1;
+}
+
+/* A coloured spine instead of a full border: less boxed-in, and the hue
+   tells you what kind of section you are looking at. */
+.spine {
+  position: relative;
+  padding-left: 0.75rem;
+}
+.spine::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.15rem;
+  bottom: 0.15rem;
+  width: 3px;
+  border-radius: 999px;
+  background: var(--spine-color, var(--line));
+}
+
+/* Interrupted answers get a cut across them - the motif of the whole app. */
+.cut-stripe {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    color-mix(in oklab, var(--accent) 12%, transparent) 0 6px,
+    transparent 6px 14px
+  );
+}
+
+@keyframes filler-dots {
+  0%, 80%, 100% { opacity: 0.25; transform: translateY(0); }
+  40% { opacity: 1; transform: translateY(-2px); }
+}
+.filler-dot {
+  animation: filler-dots 1.2s ease-in-out infinite;
+}
+
+@keyframes sweep {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(300%); }
+}
+.sweep::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, color-mix(in oklab, var(--foreground) 12%, transparent), transparent);
+  animation: sweep 1.6s ease-in-out infinite;
 }

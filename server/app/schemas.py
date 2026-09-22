@@ -39,6 +39,8 @@ class GoalAction(str, Enum):
     SWITCH = "switch"
     REVERT = "revert"
     COMPLETE = "complete"
+    # Not a classification of what the user said - a plan-progress update.
+    PROGRESS = "progress"
 
 
 # --------------------------------------------------------------------------
@@ -130,6 +132,23 @@ class MessageFrame(ServerFrame):
     modality: str = "text"
     status: Literal["complete", "interrupted", "resumed"] = "complete"
     meta: dict[str, Any] = Field(default_factory=dict)
+
+
+class FillerFrame(ServerFrame):
+    """Ephemeral chatter while the agent works. Never enters the transcript."""
+
+    t: Literal["filler"] = "filler"
+    turn_id: str
+    text: str
+
+
+class NudgeFrame(ServerFrame):
+    """An offer to return to a goal that was parked during a detour."""
+
+    t: Literal["nudge"] = "nudge"
+    goal_id: str
+    text: str
+    prompt: str
 
 
 class GoalFrame(ServerFrame):

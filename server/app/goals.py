@@ -35,6 +35,16 @@ class Goal:
     status: GoalStatus = GoalStatus.ACTIVE
     constraints: list[str] = field(default_factory=list)
     turns: int = 0
+    # The plan the agent drew up for this goal, and how far it got. This is what
+    # lets the UI show progress towards the end goal rather than just activity.
+    steps: list[str] = field(default_factory=list)
+    step_index: int = 0
+
+    @property
+    def progress(self) -> float:
+        if not self.steps:
+            return 0.0
+        return min(self.step_index / len(self.steps), 1.0)
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -43,6 +53,9 @@ class Goal:
             "status": self.status.value,
             "constraints": list(self.constraints),
             "turns": self.turns,
+            "steps": list(self.steps),
+            "step_index": self.step_index,
+            "progress": round(self.progress, 3),
         }
 
 

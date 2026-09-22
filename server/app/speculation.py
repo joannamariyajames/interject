@@ -46,12 +46,16 @@ class SpeculationResult:
 
 
 def _similarity(candidate: str, final: str) -> float:
-    """How much of the final utterance was already covered by the guess."""
+    """How much of the final utterance's topic the guess already covered.
+
+    Deliberately not a prefix check. Every speculation is a prefix of what the
+    user went on to say, so treating prefixes as perfect matches accepts the
+    guess made before the user reached the noun - and then answers a question
+    they never asked. Only shared content words count.
+    """
     guess, target = set(tokenize(candidate)), set(tokenize(final))
     if not guess or not target:
         return 0.0
-    if final.lower().startswith(candidate.lower().strip()):
-        return 1.0
     return len(guess & target) / len(target)
 
 

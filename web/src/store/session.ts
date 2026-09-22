@@ -9,6 +9,7 @@ import type {
   Modality,
   ServerFrame,
   SpecRecord,
+  Nudge,
   Scenario,
   Stage,
   TimelineEvent,
@@ -63,6 +64,8 @@ export interface SessionState {
   messages: ChatMessage[];
   streaming: { turnId: string; text: string } | null;
   tokensThisTurn: number;
+  filler: string | null;
+  nudge: Nudge | null;
 
   goals: Goal[];
   goalAction: GoalAction | null;
@@ -115,6 +118,8 @@ export const useSession = create<SessionState>((set, get) => ({
   messages: [],
   streaming: null,
   tokensThisTurn: 0,
+  filler: null,
+  nudge: null,
 
   goals: [],
   goalAction: null,
@@ -222,7 +227,7 @@ export const useSession = create<SessionState>((set, get) => ({
     const body = (text ?? get().draft).trim();
     if (!body) return;
     socket?.send({ t: "final", text: body, seq: 0, modality: get().modality });
-    set({ draft: "", tokensThisTurn: 0 });
+    set({ draft: "", tokensThisTurn: 0, filler: null, nudge: null });
   },
 
   interrupt: (reason = "barge_in") => {
@@ -244,6 +249,8 @@ export const useSession = create<SessionState>((set, get) => ({
       metrics: [],
       timeline: [event("stage", "session", "Session memory cleared.", "neutral")],
       checkpoint: null,
+      filler: null,
+      nudge: null,
       interruptions: 0,
       resumes: 0,
       lastError: null,
@@ -296,6 +303,7 @@ function applyFrame(set: Setter, get: () => SessionState, frame: ServerFrame) {
         },
         tokensThisTurn: s.streaming?.turnId === frame.turn_id ? s.tokensThisTurn + 1 : 1,
         totalTokens: s.totalTokens + 1,
+        filler: null,
       }));
       break;
 
@@ -313,6 +321,7 @@ function applyFrame(set: Setter, get: () => SessionState, frame: ServerFrame) {
         // The streamed buffer is replaced by the authoritative message.
         messages: [...s.messages.filter((m) => !(m.turnId === message.turnId && m.role === message.role)), message],
         streaming: frame.role === "agent" ? null : s.streaming,
+        filler: frame.role === "agent" ? null : s.filler,
         interruptions: frame.status === "interrupted" ? s.interruptions + 1 : s.interruptions,
         resumes: frame.status === "resumed" ? s.resumes + 1 : s.resumes,
         // The server pops the checkpoint when a turn consumes it, so the card
@@ -322,6 +331,23 @@ function applyFrame(set: Setter, get: () => SessionState, frame: ServerFrame) {
       }));
       break;
     }
+
+    case "filler":
+      // Ephemeral by design: only the latest line is held, and it never joins
+      // the transcript.
+      set({ filler: frame.text });
+      break;
+
+    case "nudge":
+      set((s) => ({
+        nudge: { goalId: frame.goal_id, text: frame.text, prompt: frame.prompt },
+        timeline: capped(
+          s.timeline,
+          event("goal", "offered a way back", frame.text, "warn"),
+          TIMELINE_CAP,
+        ),
+      }));
+      break;
 
     case "goal":
       set((s) => ({

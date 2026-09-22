@@ -95,10 +95,10 @@ async def test_a_goal_switch_after_an_interrupt_parks_instead_of_resuming():
     await runtime.on_final("actually, what is the refund policy if I cancel?")
     await runtime._task
 
-    goal_frames = collector.of("goal")
-    assert goal_frames[-1]["action"] == GoalAction.SWITCH.value
+    decisions = [f for f in collector.of("goal") if f["action"] != GoalAction.PROGRESS.value]
+    assert decisions[-1]["action"] == GoalAction.SWITCH.value
     assert session.resumes == 0, "a switch must not resume the old answer"
-    statuses = [g["status"] for g in goal_frames[-1]["stack"]]
+    statuses = [g["status"] for g in decisions[-1]["stack"]]
     assert "parked" in statuses, "the abandoned goal is kept for later"
 
 
@@ -191,3 +191,81 @@ async def test_a_terse_refinement_keeps_the_goal_topic():
 
     docs = collector.of("message")[-1]["meta"]["evidence"]
     assert any(d.startswith("hotels") for d in docs), f"lost the hotel topic: {docs}"
+
+
+async def test_filler_keeps_the_conversation_alive_before_the_answer():
+    """The brief asks for the conversation to stay alive while the agent thinks."""
+    runtime, collector, _ = make()
+    await runtime.on_final("What are the baggage limits on each cabin?")
+    await runtime._task
+
+    filler = collector.of("filler")
+    assert filler, "the agent went silent while it worked"
+
+    # Filler must all land before the real answer starts, and must never become
+    # part of the transcript.
+    first_token = next(f for f in collector.frames if f["t"] == "token")
+    assert all(f["ts"] <= first_token["ts"] for f in filler)
+    answer = collector.of("message")[-1]["content"]
+    assert not any(f["text"] in answer for f in filler)
+
+
+async def test_filler_stops_the_instant_the_user_barges_in():
+    runtime, collector, _ = make()
+    await runtime.on_final("Find me a flight from Bengaluru to Mumbai on Friday")
+    await asyncio.sleep(0.6)  # let at least one filler line land
+    assert collector.of("filler")
+    await runtime.interrupt("barge_in")
+
+    seen = len(collector.of("filler"))
+    await asyncio.sleep(1.6)  # longer than the filler gap
+    assert len(collector.of("filler")) == seen, "filler kept talking after the interrupt"
+
+
+async def test_plan_steps_report_progress_towards_the_goal():
+    runtime, collector, _ = make()
+    await runtime.on_final("What are the baggage limits on each cabin?")
+    await runtime._task
+
+    progress = [f for f in collector.of("goal") if f["action"] == "progress"]
+    assert progress, "no progress reported"
+    final_goal = progress[-1]["stack"][-1]
+    assert final_goal["steps"], "the goal carries no plan"
+    assert final_goal["progress"] == 1.0, "the plan never completed"
+
+
+async def test_a_detour_offers_the_way_back_to_the_parked_goal():
+    """"driving the conversation towards end goal" - the agent proposes it."""
+    runtime, collector, _ = make()
+    await runtime.on_final("Find me a flight from Bengaluru to Mumbai on Friday")
+    await runtime._task
+    assert not collector.of("nudge"), "nothing parked yet, so nothing to offer"
+
+    await runtime.on_final("actually, what happens to my refund if I cancel?")
+    await runtime._task
+
+    nudges = collector.of("nudge")
+    assert nudges, "the parked goal was never offered back"
+    assert "flight" in nudges[-1]["text"].lower()
+
+
+async def test_a_topic_free_prefix_never_wins_the_speculation():
+    """The bug this guards against was visible in the demo.
+
+    Speaking "actually wait what happens to my refund if I cancel this" fires a
+    speculation on "actually wait what happens" - a prefix with no topic in it.
+    Treating any prefix as a perfect match let that win, and the agent then
+    answered that it had nothing on refunds while the corpus plainly did.
+    """
+    runtime, collector, _ = make()
+    for prefix in ("actually wait", "actually wait what", "actually wait what happens"):
+        await runtime.on_partial(prefix)
+        await asyncio.sleep(0.03)
+    await runtime.on_final("actually wait what happens to my refund if I cancel this")
+    await runtime._task
+
+    answer = collector.of("message")[-1]
+    docs = answer["meta"]["evidence"]
+    assert docs, "the agent found nothing despite the corpus covering refunds"
+    assert any(d.startswith("policy") for d in docs), f"wrong passages: {docs}"
+    assert "don't have anything in the corpus" not in collector.text()

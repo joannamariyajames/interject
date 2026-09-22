@@ -28,7 +28,9 @@ the next thing you say continues the answer instead of restarting it.
 | Cater to goal changes without losing session context | A goal **stack**, not a variable. A swerve *parks* the old goal instead of dropping it, carrying its accumulated constraints, so "anyway, back to the flight" restores it intact. |
 | A solid harness around the real-time agent | Admission control, per-turn tool budgets, hard timeouts, argument redaction, and cancellation that is re-raised rather than swallowed. Irreversible tools cannot be self-authorised. Every verdict is streamed to the UI. |
 | Session-scoped memory only | An in-process store keyed by socket. No disk, no cross-session profile. Closing the tab ends it. |
-| Multi-modal inputs | Text, voice (simulated from transcripts, as the brief permits) and image-accompanied questions. |
+| Keep the conversation alive | A filler channel speaks while the agent works ("pulling up what we have on baggage limits") so there is never dead air. It is ephemeral: never entering the transcript, never fed back into context, so it cannot dilute the answer. |
+| Drive towards the end goal | Plan steps become the goal's progress track, and after a detour the agent offers the way back to whatever it parked. |
+| Multi-modal inputs | Text, image-accompanied questions, and voice simulated from transcripts, replayed word by word at a speaking cadence so speculation fires mid-sentence exactly as it would on live speech. |
 
 Out of scope per the brief, and deliberately not attempted: speech synthesis
 quality, wake-word detection, UI polish as a graded artifact.
@@ -69,6 +71,9 @@ cd web && npm install && npm run dev
 </details>
 
 ### Try it in 30 seconds
+
+Press one of the **Speak** buttons under the composer to hear a transcript
+replayed at talking speed - then cut in while it is still "speaking".
 
 1. Ask **"What are the baggage limits on each cabin?"**
 2. While it is answering, press **Esc** - or just start typing. Both count as
@@ -165,6 +170,11 @@ refuses an irreversible call.
   its rationale to the UI so you can see when it does.
 - BM25 over a 15-document corpus occasionally surfaces a loosely related passage.
   Answers cite their `doc_id`s so a wrong pull is visible rather than laundered.
+- Speculation is scored loosely and then verified: the prefetched passages must
+  cover at least half of what the finished utterance actually needs, or they are
+  discarded and refetched. A wrong guess costs latency, never correctness.
+- Voice is simulated from transcripts, which is what the brief permits. Real
+  microphone input would drop into the same partial channel unchanged.
 - The telemetry rail is desktop-first: it is shown by default from 1280px and can
   be toggled on from 1024px. Below 768px the sidebar moves into a slide-over
   drawer behind the menu button. The chat itself works at phone width.

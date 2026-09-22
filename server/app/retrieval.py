@@ -23,6 +23,12 @@ _STOP = {
     "is", "are", "was", "were", "be", "been", "it", "its", "this", "that",
     "with", "as", "at", "by", "from", "i", "me", "my", "we", "you", "your",
     "can", "do", "does", "did", "what", "how", "when", "where", "which",
+    # Discourse markers: they steer the conversation but carry no topic, so
+    # counting them as content makes an early prefix look far more informative
+    # than it is.
+    "actually", "wait", "okay", "ok", "well", "hmm", "um", "uh", "just",
+    "please", "sorry", "anyway", "also", "now", "then", "so", "like",
+    "happen", "happens", "tell", "know", "think", "want", "need", "get",
 }
 
 

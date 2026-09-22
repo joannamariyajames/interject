@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { AudioLines, ImageIcon, Scissors, Sparkles, User } from "lucide-react";
+import { AudioLines, CornerUpLeft, ImageIcon, Scissors, Sparkles, User } from "lucide-react";
 import { Badge } from "~/components/ui/primitives";
 import { useSession } from "~/store/session";
 import { cn } from "~/lib/utils";
@@ -94,7 +94,7 @@ function AgentBubble({
           className={cn(
             "rounded-[var(--radius-card)] rounded-tl-[8px] border px-4 py-3",
             interrupted
-              ? "border-dashed border-accent/55 bg-accent-soft/35"
+              ? "cut-stripe border-dashed border-accent/55 bg-accent-soft/35"
               : "border-line bg-surface shadow-[var(--shadow-soft)]",
           )}
         >
@@ -156,6 +156,60 @@ function EmptyState() {
   );
 }
 
+/** Ephemeral chatter while the agent works. Never part of the transcript. */
+function FillerLine() {
+  const filler = useSession((s) => s.filler);
+  return (
+    <AnimatePresence>
+      {filler ? (
+        <motion.div
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -4 }}
+          className="flex items-center gap-2.5"
+        >
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-live-soft text-live">
+            <Sparkles size={13} />
+          </div>
+          <p className="flex items-center gap-2 text-sm italic text-muted">
+            {filler}
+            <span className="flex gap-0.5" aria-hidden>
+              {[0, 0.15, 0.3].map((delay) => (
+                <span
+                  key={delay}
+                  className="filler-dot h-1 w-1 rounded-full bg-live"
+                  style={{ animationDelay: `${delay}s` }}
+                />
+              ))}
+            </span>
+          </p>
+        </motion.div>
+      ) : null}
+    </AnimatePresence>
+  );
+}
+
+/** The agent offering the way back to a goal it parked during a detour. */
+function NudgeChip() {
+  const nudge = useSession((s) => s.nudge);
+  const submit = useSession((s) => s.submit);
+  if (!nudge) return null;
+  return (
+    <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="flex justify-start pl-10">
+      <button
+        onClick={() => submit(`anyway, ${nudge.prompt}`)}
+        className="group flex items-center gap-2 rounded-[var(--radius-pill)] border border-warn/45 bg-warn-soft/50 px-3 py-1.5 text-left transition-colors hover:border-warn"
+      >
+        <CornerUpLeft size={13} className="shrink-0 text-warn" />
+        <span className="text-[11px] text-foreground">
+          Still open: <span className="font-medium">{nudge.text}</span>
+        </span>
+        <span className="text-[11px] font-semibold text-warn group-hover:underline">resume</span>
+      </button>
+    </motion.div>
+  );
+}
+
 export function Transcript() {
   const messages = useSession((s) => s.messages);
   const streaming = useSession((s) => s.streaming);
@@ -209,6 +263,8 @@ export function Transcript() {
               }}
             />
           ) : null}
+          <FillerLine />
+          <NudgeChip />
           <div ref={bottomRef} />
         </div>
       )}

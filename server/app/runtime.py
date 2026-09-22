@@ -27,6 +27,7 @@ import uuid
 from typing import Any, Awaitable, Callable
 
 from .config import settings
+from .filler import FillerVoice, keep_alive, topic_of
 from .goals import GoalAction
 from .harness import Harness, TurnBudget
 from .providers import GenerationRequest, build_provider
@@ -34,6 +35,8 @@ from .retrieval import Hit, corpus
 from .schemas import (
     CheckpointFrame,
     ErrorFrame,
+    FillerFrame,
+    NudgeFrame,
     GoalFrame,
     MessageFrame,
     MetricFrame,
@@ -82,6 +85,8 @@ class AgentRuntime:
         self._evidence: list[dict[str, str]] = []
         self._plan_progress: str = "not started"
         self._token_delay = settings.token_delay_ms
+        self._stage: Stage = Stage.IDLE
+        self._filler: asyncio.Task[None] | None = None
 
     # ------------------------------------------------------------------
     # state
@@ -95,6 +100,15 @@ class AgentRuntime:
             self._token_delay = token_delay_ms
         if strict_harness is not None:
             self.harness.strict = strict_harness
+
+    async def _stage_to(self, stage: Stage, detail: str, turn_id: str | None = None) -> None:
+        self._stage = stage
+        await self.emit(StageFrame(stage=stage, detail=detail, turn_id=turn_id))
+
+    def _stop_filler(self) -> None:
+        if self._filler is not None and not self._filler.done():
+            self._filler.cancel()
+        self._filler = None
 
     # ------------------------------------------------------------------
     # inbound events
@@ -218,7 +232,7 @@ class AgentRuntime:
         interrupted = False
         try:
             # -- 1. goal bookkeeping ------------------------------------
-            await self.emit(StageFrame(stage=Stage.PLANNING, turn_id=turn_id, detail="Placing the utterance against the goal stack"))
+            await self._stage_to(Stage.PLANNING, "Placing the utterance against the goal stack", turn_id)
             classification = self.session.goals.classify(utterance)
             goal = self.session.goals.apply(utterance, classification)
             await self.emit(
@@ -226,6 +240,18 @@ class AgentRuntime:
                     action=classification.action,
                     stack=self.session.goals.snapshot(),
                     rationale=classification.rationale,
+                )
+            )
+
+            # Keep the conversation alive while the slow part happens. This is a
+            # separate task so the turn stays interruptible; cancelling the turn
+            # silences the chatter in the same instant.
+            self._filler = asyncio.ensure_future(
+                keep_alive(
+                    emit_line=lambda text: self.emit(FillerFrame(turn_id=turn_id, text=text)),
+                    current_stage=lambda: self._stage,
+                    topic=topic_of(goal.text),
+                    voice=FillerVoice(),
                 )
             )
 
@@ -272,7 +298,7 @@ class AgentRuntime:
             else:
                 query = " ".join([goal.text, *goal.constraints, utterance])
 
-            await self.emit(StageFrame(stage=Stage.RETRIEVING, turn_id=turn_id, detail="Gathering evidence"))
+            await self._stage_to(Stage.RETRIEVING, "Gathering evidence", turn_id)
             budget = self.harness.new_budget()
             evidence = carried_evidence
             if not evidence:
@@ -323,14 +349,33 @@ class AgentRuntime:
                 modality=modality,
                 notice=notice,
             )
-            await self.emit(StageFrame(stage=Stage.REASONING, turn_id=turn_id, detail="Drafting a plan"))
-            for index, step in enumerate(self.provider.plan(request), start=1):
+            await self._stage_to(Stage.REASONING, "Drafting a plan", turn_id)
+            steps = self.provider.plan(request)
+            goal.steps = steps
+            goal.step_index = 0
+            await self.emit(
+                GoalFrame(
+                    action=GoalAction.PROGRESS,
+                    stack=self.session.goals.snapshot(),
+                    rationale=f"Plan drawn up: {len(steps)} steps toward the goal.",
+                )
+            )
+            for index, step in enumerate(steps, start=1):
                 await asyncio.sleep(settings.plan_step_ms / 1000.0)
                 self._plan_progress = f"plan step {index}: {step}"
+                goal.step_index = index
                 await self.emit(StageFrame(stage=Stage.REASONING, turn_id=turn_id, detail=step))
+                await self.emit(
+                    GoalFrame(
+                        action=GoalAction.PROGRESS,
+                        stack=self.session.goals.snapshot(),
+                        rationale=step,
+                    )
+                )
 
             # -- 5. stream ----------------------------------------------
-            await self.emit(StageFrame(stage=Stage.RESPONDING, turn_id=turn_id, detail="Answering - interrupt any time"))
+            self._stop_filler()
+            await self._stage_to(Stage.RESPONDING, "Answering - interrupt any time", turn_id)
             turn_started = now_ms()
             first_token_at: float | None = None
             async for chunk in self.provider.stream(request):
@@ -373,7 +418,23 @@ class AgentRuntime:
                     note="first plan step -> final word",
                 )
             )
-            await self.emit(StageFrame(stage=Stage.IDLE, turn_id=turn_id, detail="Your move."))
+            # Drive the conversation back towards the end goal: if the user
+            # detoured, say so and offer the way back rather than waiting.
+            parked = [
+                g for g in self.session.goals.stack
+                if g.status.value == "parked" and g.goal_id != goal.goal_id
+            ]
+            if parked:
+                target = parked[-1]
+                await self.emit(
+                    NudgeFrame(
+                        goal_id=target.goal_id,
+                        text=target.text,
+                        prompt=f"back to {topic_of(target.text)}",
+                    )
+                )
+
+            await self._stage_to(Stage.IDLE, "Your move.", turn_id)
 
         except asyncio.CancelledError:
             interrupted = True
@@ -382,6 +443,7 @@ class AgentRuntime:
             await self.emit(ErrorFrame(message=f"{type(exc).__name__}: {exc}"))
             await self.emit(StageFrame(stage=Stage.IDLE, detail="Recovered from an error."))
         finally:
+            self._stop_filler()
             if interrupted:
                 # Synchronous only. Unwinding a cancellation is no place to be
                 # awaiting a websocket; interrupt() does the reporting.
@@ -407,6 +469,35 @@ class AgentRuntime:
             return await self._cold_retrieve(query, budget)
 
         result = await self.speculation.settle(query)
+
+        if result.hit:
+            # The scoring above says the guess looked close enough. Confirm it
+            # actually retrieved what the finished utterance asks for: BM25
+            # itself is cheap, it is the fetch behind it that is slow, so this
+            # check costs nothing and stops a plausible-but-wrong prefetch from
+            # silently becoming the answer.
+            expected = {h.doc.doc_id for h in corpus.search(query, k=3)}
+            got = {h.doc.doc_id for h in result.hits}
+            # Most of what the finished utterance needs has to already be in
+            # hand. Demanding an exact top-1 match would throw away a prefetch
+            # that is still substantially right whenever the user adds a
+            # qualifier at the end, which is most of the time.
+            coverage = len(expected & got) / len(expected) if expected else 0.0
+            if coverage < 0.5:
+                await self.emit(
+                    SpecFrame(
+                        status="discarded", query=result.query, saved_ms=0.0,
+                        docs=sorted(got),
+                    )
+                )
+                await self.emit(
+                    MetricFrame(
+                        name="speculation_corrected", value=1.0, unit="count",
+                        note=f"prefetch covered only {coverage:.0%} of what was needed; refetching",
+                    )
+                )
+                return await self._cold_retrieve(query, budget)
+
         if result.hit:
             await self.emit(
                 SpecFrame(
