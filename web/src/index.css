@@ -32,6 +32,20 @@
   --info-soft: oklch(0.955 0.03 258);
   --danger: oklch(0.585 0.212 27);
 
+  /* Saturated data fills, borrowed from the LastChat statistics screen: big
+     numbers sitting on a solid colour rather than a tinted border. */
+  --fill-teal: oklch(0.74 0.128 175);
+  --fill-teal-ink: oklch(0.24 0.05 175);
+  --fill-blue: oklch(0.72 0.122 245);
+  --fill-blue-ink: oklch(0.22 0.05 245);
+  --fill-violet: oklch(0.71 0.128 300);
+  --fill-violet-ink: oklch(0.22 0.05 300);
+  --fill-amber: oklch(0.82 0.135 78);
+  --fill-amber-ink: oklch(0.26 0.05 78);
+  --fill-slate: oklch(0.88 0.006 264);
+  --fill-slate-ink: oklch(0.26 0.01 264);
+  --heat-0: oklch(0.90 0.006 264);
+
   --radius-panel: 26px;
   --radius-card: 20px;
   --radius-item: 14px;
@@ -64,6 +78,18 @@
   --info-soft: oklch(0.296 0.056 256);
   --danger: oklch(0.684 0.192 25);
 
+  --fill-teal: oklch(0.72 0.118 175);
+  --fill-teal-ink: oklch(0.17 0.03 175);
+  --fill-blue: oklch(0.66 0.118 245);
+  --fill-blue-ink: oklch(0.15 0.03 245);
+  --fill-violet: oklch(0.65 0.124 300);
+  --fill-violet-ink: oklch(0.15 0.03 300);
+  --fill-amber: oklch(0.78 0.132 78);
+  --fill-amber-ink: oklch(0.2 0.04 78);
+  --fill-slate: oklch(0.30 0.012 268);
+  --fill-slate-ink: oklch(0.93 0.006 268);
+  --heat-0: oklch(0.255 0.014 268);
+
   --shadow-soft: 0 1px 2px oklch(0 0 0 / 0.3), 0 8px 24px oklch(0 0 0 / 0.28);
   --shadow-lift: 0 2px 4px oklch(0 0 0 / 0.36), 0 18px 48px oklch(0 0 0 / 0.42);
 }
@@ -88,6 +114,17 @@
   --color-info: var(--info);
   --color-info-soft: var(--info-soft);
   --color-danger: var(--danger);
+
+  --color-fill-teal: var(--fill-teal);
+  --color-fill-teal-ink: var(--fill-teal-ink);
+  --color-fill-blue: var(--fill-blue);
+  --color-fill-blue-ink: var(--fill-blue-ink);
+  --color-fill-violet: var(--fill-violet);
+  --color-fill-violet-ink: var(--fill-violet-ink);
+  --color-fill-amber: var(--fill-amber);
+  --color-fill-amber-ink: var(--fill-amber-ink);
+  --color-fill-slate: var(--fill-slate);
+  --color-fill-slate-ink: var(--fill-slate-ink);
 
   --radius-panel: var(--radius-panel);
   --radius-card: var(--radius-card);

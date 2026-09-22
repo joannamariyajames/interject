@@ -77,6 +77,8 @@ export interface SessionState {
   interruptions: number;
   resumes: number;
   lastError: string | null;
+  startedAt: number;
+  totalTokens: number;
 
   scenarios: Scenario[];
   runningScenario: string | null;
@@ -127,6 +129,8 @@ export const useSession = create<SessionState>((set, get) => ({
   interruptions: 0,
   resumes: 0,
   lastError: null,
+  startedAt: Date.now(),
+  totalTokens: 0,
 
   scenarios: [],
   runningScenario: null,
@@ -244,6 +248,8 @@ export const useSession = create<SessionState>((set, get) => ({
       resumes: 0,
       lastError: null,
       tokensThisTurn: 0,
+      totalTokens: 0,
+      startedAt: Date.now(),
     });
   },
 
@@ -289,6 +295,7 @@ function applyFrame(set: Setter, get: () => SessionState, frame: ServerFrame) {
           text: (s.streaming?.turnId === frame.turn_id ? s.streaming.text : "") + frame.text,
         },
         tokensThisTurn: s.streaming?.turnId === frame.turn_id ? s.tokensThisTurn + 1 : 1,
+        totalTokens: s.totalTokens + 1,
       }));
       break;
 

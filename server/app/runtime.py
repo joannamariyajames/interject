@@ -278,11 +278,13 @@ class AgentRuntime:
             if not evidence:
                 evidence = await self._retrieve(query, budget, use_speculation=self_contained)
             else:
+                # Not a speculation hit: this evidence was already in hand from
+                # the interrupted turn, so the whole retrieval is skipped.
                 await self.emit(
-                    SpecFrame(
-                        status="hit", query=utterance,
-                        saved_ms=float(settings.retrieval_latency_ms),
-                        docs=[e["doc_id"] for e in evidence],
+                    MetricFrame(
+                        name="retrieval_skipped",
+                        value=float(settings.retrieval_latency_ms),
+                        note="checkpoint already held the passages",
                     )
                 )
             self._evidence = evidence
@@ -357,6 +359,7 @@ class AgentRuntime:
                     meta={
                         "evidence": [e["doc_id"] for e in evidence],
                         "goal_id": goal.goal_id,
+                        "latency_ms": round(now_ms() - turn_started, 1),
                         "tools": [
                             {"name": o.name, "status": o.status, "verdict": o.verdict}
                             for o in budget.audit

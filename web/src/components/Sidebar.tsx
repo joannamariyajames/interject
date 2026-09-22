@@ -75,15 +75,27 @@ export function Sidebar({ onAction }: { onAction?: () => void } = {}) {
                       : "border-line bg-surface hover:border-accent/40",
                   )}
                 >
-                  <div className="flex items-center gap-1.5">
-                    {isRunning ? (
-                      <Square size={11} className="shrink-0 text-accent" />
-                    ) : (
-                      <Play size={11} className="shrink-0 text-muted group-hover:text-accent" />
-                    )}
-                    <span className="truncate text-xs font-medium">{scenario.title}</span>
+                  <div className="flex items-start gap-2.5">
+                    <span
+                      className={cn(
+                        "mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-[10px] transition-colors",
+                        isRunning
+                          ? "bg-accent text-accent-foreground"
+                          : "bg-subtle text-muted group-hover:bg-accent-soft group-hover:text-accent",
+                      )}
+                    >
+                      {isRunning ? <Square size={12} /> : <Play size={12} />}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <span className="block truncate text-xs font-medium">{scenario.title}</span>
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        <Badge tone={isRunning ? "accent" : "neutral"} className="py-0">
+                          {isRunning ? "running" : `${scenario.steps.length} steps`}
+                        </Badge>
+                      </div>
+                      <p className="mt-1.5 text-[11px] leading-snug text-muted">{scenario.blurb}</p>
+                    </div>
                   </div>
-                  <p className="mt-1 text-[11px] leading-snug text-muted">{scenario.blurb}</p>
                 </button>
               );
             })}

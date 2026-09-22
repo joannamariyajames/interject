@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import {
   Activity,
@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { Badge, Button, Panel, SectionLabel, StatTile } from "~/components/ui/primitives";
 import { StagePipeline } from "~/components/StagePipeline";
+import { StatsView } from "~/components/StatsView";
 import { latestMetric, metricAverage, totalSaved, useSession } from "~/store/session";
 import { cn, ms } from "~/lib/utils";
 import type { TimelineEvent } from "~/lib/types";
@@ -33,6 +34,7 @@ function time(at: number) {
 }
 
 export function MindRail() {
+  const [tab, setTab] = useState<"mind" | "stats">("mind");
   const {
     stage,
     stageDetail,
@@ -63,9 +65,24 @@ export function MindRail() {
     <Panel className="w-[360px] shrink-0 overflow-hidden">
       <header className="flex items-center gap-2 border-b border-line px-4 py-3">
         <Activity size={15} className="text-accent" />
-        <h2 className="text-sm font-semibold">Agent mind</h2>
-        <span className="ml-auto font-mono text-[10px] uppercase tracking-wider text-muted">live</span>
+        <h2 className="text-sm font-semibold">{tab === "mind" ? "Agent mind" : "Statistics"}</h2>
+        <div className="ml-auto flex rounded-[var(--radius-pill)] bg-subtle p-0.5">
+          {(["mind", "stats"] as const).map((id) => (
+            <button
+              key={id}
+              onClick={() => setTab(id)}
+              className={cn(
+                "rounded-[var(--radius-pill)] px-2.5 py-1 text-[11px] font-medium capitalize transition-colors",
+                tab === id ? "bg-surface text-foreground shadow-[var(--shadow-soft)]" : "text-muted hover:text-foreground",
+              )}
+            >
+              {id}
+            </button>
+          ))}
+        </div>
       </header>
+
+      {tab === "stats" ? <StatsView /> : (
 
       <div className="scrollable flex min-h-0 flex-1 flex-col gap-5 p-4">
         <div className="shrink-0">
@@ -238,6 +255,7 @@ export function MindRail() {
           everything it held.
         </p>
       </div>
+      )}
     </Panel>
   );
 }

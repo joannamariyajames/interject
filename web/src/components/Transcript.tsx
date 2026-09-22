@@ -76,11 +76,19 @@ function AgentBubble({
       </div>
 
       <div className="min-w-0 max-w-[82%] flex-1">
-        {message.status === "resumed" ? (
-          <Badge tone="warn" className="mb-1.5">
-            resumed from checkpoint
-          </Badge>
-        ) : null}
+        <div className="mb-1.5 flex flex-wrap items-center gap-1.5">
+          <span className="text-xs font-semibold text-foreground">Interject</span>
+          {typeof message.meta?.latency_ms === "number" ? (
+            <Badge tone="neutral" className="font-mono">
+              {((message.meta.latency_ms as number) / 1000).toFixed(1)}s
+            </Badge>
+          ) : null}
+          {streaming ? <Badge tone="live">streaming</Badge> : null}
+          {message.status === "resumed" ? (
+            <Badge tone="warn">resumed from checkpoint</Badge>
+          ) : null}
+          {interrupted ? <Badge tone="accent">cut short</Badge> : null}
+        </div>
 
         <div
           className={cn(
